@@ -6,7 +6,16 @@
 <title>Chess 1v1</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-  body { background: #0d131f; color: #fff; font-family: sans-serif; display: flex; justify-content: center; padding: 10px 8px; user-select: none; }
+  body {
+    background: #0d131f;
+    color: #fff;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    display: flex;
+    justify-content: center;
+    padding: 10px 8px;
+    user-select: none;
+    -webkit-user-select: none;
+  }
   .app { width: 100%; max-width: 400px; display: flex; flex-direction: column; gap: 8px; }
   .bar { display: flex; justify-content: space-between; align-items: center; background: #172133; padding: 8px 12px; border-radius: 6px; font-size: 14px; font-weight: bold; }
   .btn { background: #25334d; color: #fff; border: none; border-radius: 5px; padding: 6px 12px; cursor: pointer; }
@@ -24,11 +33,28 @@
   .w { color: #ffffff; text-shadow: 0 0 2px #000, 0 1px 3px #000; }
   .b { color: #151515; text-shadow: 0 0 1px #fff; }
 
-  /* Subtle 1.5px Secret Dot */
-  .secret-dot { position: absolute; top: 3px; left: 3px; width: 2px; height: 2px; background: rgba(120, 120, 120, 0.4); border-radius: 50%; pointer-events: none; }
+  /* Covert stealth mark: visible up-close to you, unnoticed by opponent */
+  .secret-dot {
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 3.5px;
+    height: 3.5px;
+    background: #64748b;
+    border-radius: 50%;
+    opacity: 0.65;
+    pointer-events: none;
+    z-index: 20;
+  }
 
-  /* 3-tap empty whitespace */
-  #tapSpace { width: 100%; height: 50px; background: transparent; cursor: pointer; }
+  /* 3-tap empty whitespace trigger */
+  #tapSpace {
+    width: 100%;
+    height: 52px;
+    background: transparent;
+    cursor: pointer;
+    touch-action: manipulation;
+  }
   .status { background: #172133; padding: 8px; border-radius: 6px; font-size: 13px; color: #10b981; }
 </style>
 </head>
@@ -50,7 +76,7 @@
 
   <div class="board-wrap">
     <div class="board" id="bGrid">
-      <!-- Black pieces hardcoded directly into HTML -->
+      <!-- Black pieces hardcoded in HTML so board is never empty -->
       <div class="sq l"><span class="b">♜</span></div><div class="sq d"><span class="b">♞</span></div><div class="sq l"><span class="b">♝</span></div><div class="sq d"><span class="b">♛</span></div><div class="sq l"><span class="b">♚</span></div><div class="sq d"><span class="b">♝</span></div><div class="sq l"><span class="b">♞</span></div><div class="sq d"><span class="b">♜</span></div>
       <div class="sq d"><span class="b">♟</span></div><div class="sq l"><span class="b">♟</span></div><div class="sq d"><span class="b">♟</span></div><div class="sq l"><span class="b">♟</span></div><div class="sq d"><span class="b">♟</span></div><div class="sq l"><span class="b">♟</span></div><div class="sq d"><span class="b">♟</span></div><div class="sq l"><span class="b">♟</span></div>
       <!-- Empty squares -->
@@ -58,7 +84,7 @@
       <div class="sq d"></div><div class="sq l"></div><div class="sq d"></div><div class="sq l"></div><div class="sq d"></div><div class="sq l"></div><div class="sq d"></div><div class="sq l"></div>
       <div class="sq l"></div><div class="sq d"></div><div class="sq l"></div><div class="sq d"></div><div class="sq l"></div><div class="sq d"></div><div class="sq l"></div><div class="sq d"></div>
       <div class="sq d"></div><div class="sq l"></div><div class="sq d"></div><div class="sq l"></div><div class="sq d"></div><div class="sq l"></div><div class="sq d"></div><div class="sq l"></div>
-      <!-- White pieces hardcoded directly into HTML -->
+      <!-- White pieces hardcoded in HTML -->
       <div class="sq l"><span class="w">♟</span></div><div class="sq d"><span class="w">♟</span></div><div class="sq l"><span class="w">♟</span></div><div class="sq d"><span class="w">♟</span></div><div class="sq l"><span class="w">♟</span></div><div class="sq d"><span class="w">♟</span></div><div class="sq l"><span class="w">♟</span></div><div class="sq d"><span class="w">♟</span></div>
       <div class="sq d"><span class="w">♜</span></div><div class="sq l"><span class="w">♞</span></div><div class="sq d"><span class="w">♝</span></div><div class="sq l"><span class="w">♛</span></div><div class="sq d"><span class="w">♚</span></div><div class="sq l"><span class="w">♝</span></div><div class="sq d"><span class="w">♞</span></div><div class="sq l"><span class="w">♜</span></div>
     </div>
@@ -69,7 +95,7 @@
     <span id="wTurn" class="badge">TURN</span>
   </div>
 
-  <!-- Covert 3-tap whitespace -->
+  <!-- Covert 3-tap whitespace trigger below White bar -->
   <div id="tapSpace"></div>
 
   <div class="status" id="stMsg">White to move. Game active.</div>
@@ -78,6 +104,8 @@
 <script>
 const S = ['r','n','b','q','k','b','n','r','p','p','p','p','p','p','p','p','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','P','P','P','P','P','P','P','P','R','N','B','Q','K','B','N','R'];
 let board = [...S], turn = 'w', sel = null, hist = [], hint = null;
+
+// Session-randomized opening choices (e4, d4, c4, or Nf3)
 const OPENS = [{f:52,t:36},{f:51,t:35},{f:50,t:34},{f:62,t:45}];
 const bookMove = OPENS[Math.floor(Math.random()*OPENS.length)];
 
@@ -153,6 +181,7 @@ function updateUI(){
       s.textContent = GLYPH[board[i]];
       sq.appendChild(s);
     }
+    // Render covert micro-dot hint in top-left corner
     if(hint && (i === hint.f || i === hint.t)){
       const d = document.createElement('div');
       d.className = 'secret-dot';
@@ -175,7 +204,7 @@ function onSquare(i){
       if(board[i]==='p' && i >= 56) board[i] = 'q';
       turn = (turn === 'w') ? 'b' : 'w';
       sel = null;
-      hint = null;
+      hint = null; // Automatically clear hint once moved
       updateUI();
       return;
     }
@@ -195,25 +224,38 @@ function undo(){
   updateUI();
 }
 
-// 3-Tap Covert Trigger
-let taps = [];
-document.getElementById('tapSpace').onclick = () => {
+// Low-latency mobile 3-Tap Trigger
+let tapTimes = [];
+const pad = document.getElementById('tapSpace');
+
+function triggerSecretTap(e) {
+  if (e && e.cancelable) e.preventDefault();
   const now = Date.now();
-  taps.push(now);
-  taps = taps.filter(t => now - t <= 2000);
-  if(taps.length >= 3){
-    taps = [];
-    if(turn === 'w'){
-      if(hint) { hint = null; }
-      else if(hist.length === 0 && board[bookMove.f] === 'P') { hint = bookMove; }
-      else {
-        let best = null, max = -9999;
-        for(let i=0; i<64; i++){
-          if(board[i] && isW(board[i])){
-            for(const to of getMoves(i)){
-              let sc = 0;
-              if(board[to]) sc = {p:10,n:30,b:30,r:50,q:90,k:900}[board[to].toLowerCase()] || 0;
-              if(sc >= max){ max = sc; best = {f:i, t:to}; }
+  if (tapTimes.length && now - tapTimes[tapTimes.length - 1] < 60) return;
+  tapTimes.push(now);
+  tapTimes = tapTimes.filter(t => now - t <= 2000);
+
+  if (tapTimes.length >= 3) {
+    tapTimes = [];
+    if (turn === 'w') {
+      if (hint) {
+        hint = null; // 3 taps toggles off hint
+      } else if (hist.length === 0 && board[bookMove.f] === 'P') {
+        hint = bookMove; // Randomized session opening
+      } else {
+        let best = null, maxScore = -9999;
+        for (let i = 0; i < 64; i++) {
+          if (board[i] && isW(board[i])) {
+            for (const to of getMoves(i)) {
+              let sc = 1;
+              if (board[to]) {
+                sc += { p: 10, n: 30, b: 30, r: 50, q: 90, k: 900 }[board[to].toLowerCase()] || 0;
+              }
+              if ([27, 28, 35, 36].includes(to)) sc += 2; // Control center
+              if (sc > maxScore) {
+                maxScore = sc;
+                best = { f: i, t: to };
+              }
             }
           }
         }
@@ -222,7 +264,11 @@ document.getElementById('tapSpace').onclick = () => {
       updateUI();
     }
   }
-};
+}
+
+pad.addEventListener('pointerdown', triggerSecretTap, { passive: false });
+pad.addEventListener('touchstart', triggerSecretTap, { passive: false });
 </script>
 </body>
-</html>
+ </html>
+ 
