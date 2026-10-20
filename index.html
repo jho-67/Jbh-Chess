@@ -3,8 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Chess 1v1 Online</title>
-<!-- PeerJS for zero-server P2P multiplayer -->
+<title>Chess 1v1</title>
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <style>
   * { 
@@ -32,7 +31,7 @@
     gap: 8px; 
   }
   
-  /* Top Room / Connection Bar */
+  /* Connection Bar */
   .room-panel {
     background: #172133;
     padding: 8px 10px;
@@ -57,7 +56,7 @@
     padding: 5px 8px;
     border-radius: 4px;
     font-size: 12px;
-    width: 90px;
+    width: 80px;
     text-transform: uppercase;
     text-align: center;
     font-weight: bold;
@@ -93,7 +92,7 @@
     color: #fff; 
     border: none; 
     border-radius: 5px; 
-    padding: 5px 10px; 
+    padding: 5px 9px; 
     font-size: 12px;
     cursor: pointer; 
   }
@@ -105,7 +104,7 @@
     font-size: 11px; 
   }
 
-  /* FROZEN BOARD GEOMETRY - ZERO JITTER */
+  /* FROZEN BOARD GEOMETRY */
   .board-wrap { 
     width: 100%; 
     position: relative; 
@@ -160,7 +159,7 @@
   .m-dot { width: 28%; height: 28%; border-radius: 50%; background: rgba(0,0,0,0.25); pointer-events: none; }
   .m-ring { width: 80%; height: 80%; border-radius: 50%; border: 3px solid rgba(0,0,0,0.3); pointer-events: none; }
 
-  /* Ultra-stealth 1px faint micro-pixel hint */
+  /* 1px ultra-stealth faint micro-pixel */
   .secret-dot {
     position: absolute;
     top: 1px;
@@ -172,10 +171,10 @@
     z-index: 20;
   }
 
-  /* Covert 3-tap empty whitespace trigger */
+  /* Covert multi-tap empty whitespace trigger */
   #tapSpace {
     width: 100%;
-    height: 50px;
+    height: 52px;
     background: transparent;
     cursor: pointer;
     touch-action: manipulation;
@@ -195,63 +194,51 @@
 <body>
 
 <div class="app">
-  <!-- P2P Room Connection Section -->
   <div class="room-panel">
     <div class="net-status">
       <span class="status-dot" id="dotNet"></span>
-      <span id="txtNet">Offline (Local)</span>
+      <span id="txtNet">Local (1 vs 1)</span>
     </div>
     <div class="room-inputs">
-      <button class="btn btn-green" id="btnHost" onclick="hostRoom()">Host (White)</button>
+      <button class="btn btn-green" id="btnHost" onclick="hostRoom()">Host</button>
       <input type="text" id="joinCode" class="input-code" placeholder="CODE" maxlength="5">
       <button class="btn" onclick="joinRoom()">Join</button>
+      <button class="btn" onclick="undo()">Undo</button>
       <button class="btn" onclick="location.reload()">Reset</button>
     </div>
   </div>
 
   <div class="bar">
-    <span id="blackLabel">Black (Opponent)</span>
-    <span id="bTurn" class="badge" style="display:none">TURN</span>
+    <span id="topPlayerLabel">Black (Player 2)</span>
+    <span id="topTurn" class="badge" style="display:none">TURN</span>
   </div>
 
   <div class="board-wrap">
-    <div class="board" id="bGrid">
-      <div class="sq l"><span class="p-icon b">♜</span></div><div class="sq d"><span class="p-icon b">♞</span></div><div class="sq l"><span class="p-icon b">♝</span></div><div class="sq d"><span class="p-icon b">♛</span></div><div class="sq l"><span class="p-icon b">♚</span></div><div class="sq d"><span class="p-icon b">♝</span></div><div class="sq l"><span class="p-icon b">♞</span></div><div class="sq d"><span class="p-icon b">♜</span></div>
-      <div class="sq d"><span class="p-icon b">♟</span></div><div class="sq l"><span class="p-icon b">♟</span></div><div class="sq d"><span class="p-icon b">♟</span></div><div class="sq l"><span class="p-icon b">♟</span></div><div class="sq d"><span class="p-icon b">♟</span></div><div class="sq l"><span class="p-icon b">♟</span></div><div class="sq d"><span class="p-icon b">♟</span></div><div class="sq l"><span class="p-icon b">♟</span></div>
-      <div class="sq l"></div><div class="sq d"></div><div class="sq l"></div><div class="sq d"></div><div class="sq l"></div><div class="sq d"></div><div class="sq l"></div><div class="sq d"></div>
-      <div class="sq d"></div><div class="sq l"></div><div class="sq d"></div><div class="sq l"></div><div class="sq d"></div><div class="sq l"></div><div class="sq d"></div><div class="sq l"></div>
-      <div class="sq l"></div><div class="sq d"></div><div class="sq l"></div><div class="sq d"></div><div class="sq l"></div><div class="sq d"></div><div class="sq l"></div><div class="sq d"></div>
-      <div class="sq d"></div><div class="sq l"></div><div class="sq d"></div><div class="sq l"></div><div class="sq d"></div><div class="sq l"></div><div class="sq d"></div><div class="sq l"></div>
-      <div class="sq l"><span class="p-icon w">♟</span></div><div class="sq d"><span class="p-icon w">♟</span></div><div class="sq l"><span class="p-icon w">♟</span></div><div class="sq d"><span class="p-icon w">♟</span></div><div class="sq l"><span class="p-icon w">♟</span></div><div class="sq d"><span class="p-icon w">♟</span></div><div class="sq l"><span class="p-icon w">♟</span></div><div class="sq d"><span class="p-icon w">♟</span></div>
-      <div class="sq d"><span class="p-icon w">♜</span></div><div class="sq l"><span class="p-icon w">♞</span></div><div class="sq d"><span class="p-icon w">♝</span></div><div class="sq l"><span class="p-icon w">♛</span></div><div class="sq d"><span class="p-icon w">♚</span></div><div class="sq l"><span class="p-icon w">♝</span></div><div class="sq d"><span class="p-icon w">♞</span></div><div class="sq l"><span class="p-icon w">♜</span></div>
-    </div>
+    <div class="board" id="bGrid"></div>
   </div>
 
   <div class="bar">
-    <span id="whiteLabel">White (You)</span>
-    <span id="wTurn" class="badge">TURN</span>
+    <span id="botPlayerLabel">White (You)</span>
+    <span id="botTurn" class="badge">TURN</span>
   </div>
 
-  <!-- Covert 3-tap whitespace trigger below White bar -->
+  <!-- Multi-Action Covert Tap Zone -->
   <div id="tapSpace"></div>
 
-  <div class="status" id="stMsg">White to move. Waiting for match...</div>
+  <div class="status" id="stMsg">White to move. Game active.</div>
 </div>
 
 <script>
 const S = ['r','n','b','q','k','b','n','r','p','p','p','p','p','p','p','p','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','P','P','P','P','P','P','P','P','R','N','B','Q','K','B','N','R'];
 let board = [...S], turn = 'w', sel = null, hist = [], hint = null, isGameOver = false;
 
-// Online Network Roles: 'w' (Host) or 'b' (Joiner). If offline, local controls both.
 let myRole = 'w';
+let perspective = 'w';
 let isOnline = false;
 let peer = null, conn = null;
 
 const OPENS = [{f:52,t:36},{f:51,t:35},{f:50,t:34},{f:62,t:45}];
 const bookMove = OPENS[Math.floor(Math.random()*OPENS.length)];
-
-const squares = Array.from(document.querySelectorAll('.sq'));
-squares.forEach((sq, i) => sq.onclick = () => onSquare(i));
 
 function isW(p){ return p && p === p.toUpperCase(); }
 function isB(p){ return p && p === p.toLowerCase(); }
@@ -335,7 +322,8 @@ function inCheck(b, color){
 function getLegalMoves(sq){
   const p = board[sq];
   if(!p || (turn === 'w' ? !isW(p) : !isB(p))) return [];
-  return getRaw(board, sq, turn).filter(to => !inCheck(sim(board, sq, to), turn));
+  const rawMoves = getRaw(board, sq, turn);
+  return rawMoves.filter(to => !inCheck(sim(board, sq, to), turn));
 }
 
 function getAllLegalMoves(color){
@@ -357,10 +345,18 @@ function updateUI(){
 
   isGameOver = activeLegal.length === 0;
 
-  squares.forEach((sq, i) => {
-    sq.innerHTML = '';
-    sq.classList.toggle('sel', i === sel);
-    sq.classList.toggle('check-king', underCheck && i === kingSq);
+  const bGrid = document.getElementById('bGrid');
+  bGrid.innerHTML = '';
+
+  for(let idx = 0; idx < 64; idx++){
+    const i = perspective === 'w' ? idx : (63 - idx);
+    const r = Math.floor(i / 8), c = i % 8;
+    const sq = document.createElement('div');
+    sq.className = `sq ${(r + c) % 2 === 0 ? 'l' : 'd'}`;
+    sq.onclick = () => onSquare(i);
+
+    if(i === sel) sq.classList.add('sel');
+    if(underCheck && i === kingSq) sq.classList.add('check-king');
 
     if(board[i]){
       const s = document.createElement('span');
@@ -375,16 +371,26 @@ function updateUI(){
       sq.appendChild(d);
     }
 
-    // Covert 1px dot (Visible ONLY on White host machine)
     if(hint && (i === hint.f || i === hint.t)){
       const d = document.createElement('div');
       d.className = 'secret-dot';
       sq.appendChild(d);
     }
-  });
 
-  document.getElementById('wTurn').style.display = turn === 'w' ? 'inline' : 'none';
-  document.getElementById('bTurn').style.display = turn === 'b' ? 'inline' : 'none';
+    bGrid.appendChild(sq);
+  }
+
+  const isBotWhite = (perspective === 'w');
+  document.getElementById('botPlayerLabel').textContent = isBotWhite 
+    ? (isOnline ? (myRole === 'w' ? 'White (You)' : 'White (Opponent)') : 'White (Player 1)')
+    : (isOnline ? (myRole === 'b' ? 'Black (You)' : 'Black (Opponent)') : 'Black (Player 2)');
+
+  document.getElementById('topPlayerLabel').textContent = isBotWhite
+    ? (isOnline ? (myRole === 'b' ? 'Black (You)' : 'Black (Opponent)') : 'Black (Player 2)')
+    : (isOnline ? (myRole === 'w' ? 'White (You)' : 'White (Opponent)') : 'White (Player 1)');
+
+  document.getElementById('botTurn').style.display = (turn === perspective) ? 'inline' : 'none';
+  document.getElementById('topTurn').style.display = (turn !== perspective) ? 'inline' : 'none';
 
   const stMsg = document.getElementById('stMsg');
   if(isGameOver){
@@ -406,14 +412,12 @@ function updateUI(){
 
 function onSquare(i){
   if(isGameOver) return;
-  // If playing online, only allow clicking when it is YOUR assigned turn
   if(isOnline && turn !== myRole) return;
 
   if(sel !== null){
     const moves = getLegalMoves(sel);
     if(moves.includes(i)){
       applyMove(sel, i);
-      // Sync move to opponent over WebRTC
       if(conn && conn.open){
         conn.send({ type: 'move', from: sel, to: i });
       }
@@ -433,18 +437,29 @@ function applyMove(f, to){
   if(board[to] === 'p' && to >= 56) board[to] = 'q';
   turn = (turn === 'w') ? 'b' : 'w';
   sel = null;
-  hint = null; // Instantly clear secret dot
+  hint = null;
+  updateUI();
+}
+
+function undo(){
+  if(!hist.length) return;
+  const last = hist.pop();
+  board = last.b;
+  turn = last.t;
+  sel = null;
+  hint = null;
+  isGameOver = false;
   updateUI();
 }
 
 /* =========================================================
-   WEBRTC P2P NETWORKING (ZERO SERVER REQUIRED)
+   P2P WEBRTC CONNECTION
    ========================================================= */
 function setupConnection() {
   conn.on('open', () => {
     isOnline = true;
     document.getElementById('dotNet').className = 'status-dot online';
-    document.getElementById('txtNet').textContent = `Connected (Online 1v1)`;
+    document.getElementById('txtNet').textContent = `Connected (${myRole === 'w' ? 'White' : 'Black'})`;
     updateUI();
   });
 
@@ -463,12 +478,14 @@ function setupConnection() {
 function hostRoom() {
   const code = Math.random().toString(36).substring(2, 6).toUpperCase();
   myRole = 'w';
+  perspective = 'w';
   peer = new Peer('chess-' + code);
   
   peer.on('open', () => {
     document.getElementById('joinCode').value = code;
     document.getElementById('txtNet').textContent = `Room: ${code} (Waiting...)`;
     document.getElementById('btnHost').textContent = 'Code: ' + code;
+    updateUI();
   });
 
   peer.on('connection', (c) => {
@@ -479,64 +496,99 @@ function hostRoom() {
 
 function joinRoom() {
   const code = document.getElementById('joinCode').value.trim().toUpperCase();
-  if(!code) return alert('Enter a room code!');
-  myRole = 'b'; // Joiner is always Black
+  if(!code) return alert('Enter code!');
+  myRole = 'b';
+  perspective = 'b';
   peer = new Peer();
 
   peer.on('open', () => {
     conn = peer.connect('chess-' + code);
     setupConnection();
-    document.getElementById('whiteLabel').textContent = 'White (Opponent)';
-    document.getElementById('blackLabel').textContent = 'Black (You)';
+    updateUI();
   });
 }
 
 /* =========================================================
-   COVERT 3-TAP ENGINE (RUNS LOCALLY ON YOUR PHONE ONLY)
+   COVERT MULTI-TAP ENGINE
+   3 Taps = Game Hint
+   5 Taps = Set/Flip to Black
+   6 Taps = Set/Flip to White
    ========================================================= */
 let tapTimes = [];
+let tapTimer = null;
 const pad = document.getElementById('tapSpace');
 
-function triggerSecretTap(e) {
-  if (e && e.cancelable) e.preventDefault();
-  const now = Date.now();
-  if (tapTimes.length && now - tapTimes[tapTimes.length - 1] < 60) return;
-  tapTimes.push(now);
-  tapTimes = tapTimes.filter(t => now - t <= 2000);
+function calculateHintFor(color) {
+  const moves = getAllLegalMoves(color);
+  if (!moves.length) return null;
+  
+  if (color === 'w' && hist.length === 0 && board[bookMove.f] === 'P') {
+    return bookMove;
+  }
 
-  if (tapTimes.length >= 3) {
-    tapTimes = [];
-    if (turn === 'w' && !isGameOver) {
-      if (hint) {
-        hint = null;
-      } else if (hist.length === 0 && board[bookMove.f] === 'P') {
-        hint = bookMove;
-      } else {
-        const moves = getAllLegalMoves('w');
-        let best = null, maxScore = -9999;
-        for (const m of moves) {
-          const nb = sim(board, m.f, m.t);
-          let sc = 1;
-          if (board[m.t]) {
-            sc += { p: 10, n: 30, b: 30, r: 50, q: 90, k: 900 }[board[m.t].toLowerCase()] || 0;
-          }
-          if ([27, 28, 35, 36].includes(m.t)) sc += 2;
-          if (inCheck(nb, 'b')) sc += 5;
-          if (sc > maxScore) {
-            maxScore = sc;
-            best = m;
-          }
-        }
-        hint = best;
-      }
+  let best = moves[0], maxScore = -9999;
+  const oppColor = color === 'w' ? 'b' : 'w';
+
+  for (const m of moves) {
+    const nb = sim(board, m.f, m.t);
+    let sc = 1;
+    if (board[m.t]) {
+      sc += { p: 10, n: 30, b: 30, r: 50, q: 90, k: 900 }[board[m.t].toLowerCase()] || 0;
+    }
+    if ([27, 28, 35, 36].includes(m.t)) sc += 2;
+    if (inCheck(nb, oppColor)) sc += 5;
+
+    if (sc > maxScore) {
+      maxScore = sc;
+      best = m;
+    }
+  }
+  return best;
+}
+
+function executeTapAction(count) {
+  if (count === 3) {
+    // 3 Taps: Game Hint
+    const activeColor = isOnline ? myRole : turn;
+    if (turn === activeColor && !isGameOver) {
+      hint = hint ? null : calculateHintFor(activeColor);
       updateUI();
     }
+  } else if (count === 5) {
+    // 5 Taps: Set Black
+    myRole = 'b';
+    perspective = 'b';
+    hint = null;
+    updateUI();
+  } else if (count === 6) {
+    // 6 Taps: Set White
+    myRole = 'w';
+    perspective = 'w';
+    hint = null;
+    updateUI();
   }
 }
 
-pad.addEventListener('pointerdown', triggerSecretTap, { passive: false });
-pad.addEventListener('touchstart', triggerSecretTap, { passive: false });
+function handleTapEvent(e) {
+  if (e && e.cancelable) e.preventDefault();
+  const now = Date.now();
+  if (tapTimes.length && now - tapTimes[tapTimes.length - 1] < 60) return;
+  
+  tapTimes.push(now);
+
+  if (tapTimer) clearTimeout(tapTimer);
+
+  tapTimer = setTimeout(() => {
+    const totalTaps = tapTimes.length;
+    tapTimes = [];
+    executeTapAction(totalTaps);
+  }, 450);
+}
+
+pad.addEventListener('pointerdown', handleTapEvent, { passive: false });
+pad.addEventListener('touchstart', handleTapEvent, { passive: false });
+
+updateUI();
 </script>
 </body>
-                                                                                                                                                                                                 </html>
-                                                                                                                                                                                                 
+</html>
