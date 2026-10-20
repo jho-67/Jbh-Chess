@@ -1,12 +1,14 @@
-JBH
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>Chess Master 1v1</title>
+  <title>Chess 1 vs 1</title>
   <style>
-    /* RESET & CORE BASE */
+    /* =========================================================================
+       FAIL-SAFE RESET & RESPONSIVE LAYOUT
+       ========================================================================= */
     *, *::before, *::after {
       box-sizing: border-box;
       margin: 0;
@@ -14,19 +16,18 @@ JBH
       -webkit-tap-highlight-color: transparent;
       user-select: none;
       -webkit-user-select: none;
-      touch-action: manipulation;
     }
 
     body {
-      background-color: #0b1120;
+      background-color: #0b0f19;
       color: #f1f5f9;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
       min-height: 100vh;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: flex-start;
-      padding: 10px 12px;
+      padding: 8px 12px 20px 12px;
       overflow-x: hidden;
     }
 
@@ -37,19 +38,18 @@ JBH
       display: flex;
       justify-content: space-between;
       align-items: center;
-      background: #1e293b;
-      padding: 8px 14px;
+      background: #151c2c;
+      padding: 8px 12px;
       border-radius: 10px;
-      border: 1px solid #334155;
+      border: 1px solid #232f48;
       margin-bottom: 8px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
     }
 
     .brand-title {
       font-size: 1.05rem;
       font-weight: 800;
       color: #f59e0b;
-      letter-spacing: 0.5px;
       display: flex;
       align-items: center;
       gap: 6px;
@@ -57,12 +57,11 @@ JBH
 
     .brand-tag {
       font-size: 0.65rem;
-      background: #0f172a;
+      background: #0b0f19;
       color: #94a3b8;
       padding: 2px 6px;
       border-radius: 4px;
-      border: 1px solid #334155;
-      font-weight: 600;
+      border: 1px solid #232f48;
     }
 
     .btn-group {
@@ -71,23 +70,23 @@ JBH
     }
 
     .action-btn {
-      background: #334155;
+      background: #1e293b;
       color: #f8fafc;
-      border: 1px solid #475569;
+      border: 1px solid #334155;
       border-radius: 6px;
-      padding: 5px 10px;
+      padding: 6px 11px;
       font-size: 0.78rem;
-      font-weight: 600;
+      font-weight: 700;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      transition: background 0.15s ease, transform 0.1s ease;
+      transition: transform 0.08s ease, background 0.15s;
     }
 
     .action-btn:active {
-      background: #475569;
       transform: scale(0.95);
+      background: #334155;
     }
 
     .btn-new {
@@ -95,7 +94,7 @@ JBH
       border-color: #7f1d1d;
     }
 
-    /* MAIN CHESS CONTAINER */
+    /* MAIN WRAPPER */
     .game-wrapper {
       width: 100%;
       max-width: 440px;
@@ -107,9 +106,9 @@ JBH
     /* PLAYER STRIPS */
     .player-strip {
       width: 100%;
-      background: #1e293b;
-      border: 1px solid #334155;
-      padding: 6px 12px;
+      background: #151c2c;
+      border: 1px solid #232f48;
+      padding: 7px 12px;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -130,8 +129,8 @@ JBH
       display: flex;
       align-items: center;
       gap: 8px;
-      font-size: 0.85rem;
-      font-weight: 600;
+      font-size: 0.86rem;
+      font-weight: 700;
     }
 
     .turn-badge {
@@ -139,7 +138,7 @@ JBH
       font-weight: 800;
       background: #d97706;
       color: #ffffff;
-      padding: 1px 6px;
+      padding: 2px 6px;
       border-radius: 4px;
       letter-spacing: 0.5px;
       display: none;
@@ -151,138 +150,168 @@ JBH
 
     .captured-bank {
       display: flex;
-      font-size: 1.15rem;
+      font-size: 1.1rem;
       line-height: 1;
       gap: 2px;
-      max-width: 170px;
+      max-width: 160px;
       overflow-x: auto;
     }
 
-    /* CHESS BOARD */
+    /* =========================================================================
+       BOARD GEOMETRY: FAIL-SAFE 100% VISIBILITY ON ANY BROWSER
+       ========================================================================= */
     .board-surround {
       width: 100%;
-      background: #2b1f17;
-      padding: 6px;
-      box-shadow: 0 12px 28px rgba(0,0,0,0.65);
+      background: #23160e;
+      padding: 5px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.7);
     }
 
-    .chess-grid {
+    .board-container {
       width: 100%;
-      aspect-ratio: 1 / 1;
-      display: grid;
-      grid-template-columns: repeat(8, 1fr);
-      grid-template-rows: repeat(8, 1fr);
       position: relative;
-      background: #b88b4a;
+      background-color: #eed9b3;
+      touch-action: none;
+    }
+
+    /* Responsive square sizing fallback */
+    .board-container::before {
+      content: "";
+      display: block;
+      padding-top: 100%; /* Guarantees strict 1:1 aspect ratio on all mobile browsers */
+    }
+
+    .board-grid {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .board-row {
+      display: flex;
+      width: 100%;
+      height: 12.5%; /* Exact 1/8th */
     }
 
     .square {
-      width: 100%;
+      width: 12.5%; /* Exact 1/8th */
       height: 100%;
       display: flex;
       align-items: center;
       justify-content: center;
       position: relative;
       cursor: pointer;
+      user-select: none;
+      -webkit-user-select: none;
     }
 
-    .sq-light { background-color: #e2d6b5; }
-    .sq-dark { background-color: #b88b4a; }
+    /* Classic tournament colors */
+    .sq-light { background-color: #eed9b3; }
+    .sq-dark  { background-color: #b88753; }
     .sq-selected { background-color: #eab308 !important; }
-    .sq-check { background-color: #ef4444 !important; }
+    .sq-check { background-color: #dc2626 !important; }
 
-    /* HIGH-CONTRAST CHESS PIECES */
+    /* HIGH-CONTRAST CHESS ICONS */
     .piece-symbol {
       width: 100%;
       height: 100%;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: clamp(2.1rem, 9.2vw, 2.85rem);
+      font-size: clamp(26px, 8.2vw, 42px);
       line-height: 1;
       pointer-events: none;
-      transition: transform 0.08s ease;
     }
 
+    /* White pieces: crisp pure white with dark border outline */
     .piece-symbol.w {
       color: #ffffff;
-      text-shadow: 0 1px 2px #000, 0 0 1px #000, 0 0 3px rgba(0,0,0,0.85);
-      filter: drop-shadow(0 2px 2px rgba(0,0,0,0.45));
+      text-shadow: 
+        -1px -1px 0 #1e293b,
+         1px -1px 0 #1e293b,
+        -1px  1px 0 #1e293b,
+         1px  1px 0 #1e293b,
+         0 2px 4px rgba(0, 0, 0, 0.7);
     }
 
+    /* Black pieces: solid deep dark with subtle top shine */
     .piece-symbol.b {
-      color: #18181b;
-      text-shadow: 0 0.5px 1px rgba(255,255,255,0.4);
-      filter: drop-shadow(0 1px 3px rgba(0,0,0,0.65));
+      color: #111827;
+      text-shadow: 
+        0 1px 1px rgba(255, 255, 255, 0.4),
+        0 2px 4px rgba(0, 0, 0, 0.8);
     }
 
-    /* NORMAL PLAY HIGHLIGHTS */
-    .move-target-dot {
+    /* STANDARD MOVE MARKERS */
+    .move-dot {
       width: 12px;
       height: 12px;
-      background: rgba(30, 41, 59, 0.4);
+      background: rgba(15, 23, 42, 0.45);
       border-radius: 50%;
       pointer-events: none;
     }
 
-    .capture-target-ring {
+    .capture-ring {
       position: absolute;
       inset: 4px;
-      border: 3.5px solid rgba(220, 38, 38, 0.5);
+      border: 3.5px solid rgba(220, 38, 38, 0.55);
       border-radius: 50%;
       pointer-events: none;
     }
 
-    /* NOTATION LABELS */
+    /* COORDINATES */
     .coord-label {
       position: absolute;
       font-size: 8px;
       font-weight: 800;
       pointer-events: none;
-      opacity: 0.7;
       line-height: 1;
+      opacity: 0.75;
     }
-    .sq-light .coord-label { color: #b88b4a; }
-    .sq-dark .coord-label { color: #e2d6b5; }
+    .sq-light .coord-label { color: #b88753; }
+    .sq-dark  .coord-label { color: #eed9b3; }
     .coord-label.rank { top: 2px; left: 2px; }
     .coord-label.file { bottom: 2px; right: 2px; }
 
-    /* =====================================================================
-       COVERT 1.5PX DISCRETE GREY HINT
-       Completely invisible to an opponent looking directly at the board
-       ===================================================================== */
-    .stealth-pixel {
+    /* =========================================================================
+       THE SECRET COVERT MICRO-DOT (1.5px semi-transparent grey pixel)
+       Invisible to opponent sitting across the table
+       ========================================================================= */
+    .covert-pixel {
       position: absolute;
       width: 1.5px;
       height: 1.5px;
-      background-color: rgba(130, 130, 130, 0.4);
+      background-color: rgba(135, 135, 140, 0.45);
+      border-radius: 50%;
       top: 3px;
       left: 3px;
       pointer-events: none;
-      z-index: 99;
-      border-radius: 50%;
+      z-index: 50;
     }
 
-    /* =====================================================================
-       3-TAP SECRET ACTIVATION ZONE
-       Natural dark seamless space below White strip: 0 borders, 0 labels
-       ===================================================================== */
-    .secret-tap-pad {
+    /* =========================================================================
+       SECRET 3-TAP TRIGGER ZONE
+       Invisible natural empty padding below the White strip
+       ========================================================================= */
+    .secret-trigger-zone {
       width: 100%;
-      height: 48px;
+      height: 52px;
       margin-top: 4px;
       background: transparent;
       cursor: default;
       touch-action: manipulation;
     }
 
-    /* MATCH STATUS CARD */
-    .status-card {
+    /* GAME STATUS CARD */
+    .status-panel {
       width: 100%;
-      background: #1e293b;
-      border: 1px solid #334155;
+      background: #151c2c;
+      border: 1px solid #232f48;
       border-radius: 10px;
-      padding: 8px 12px;
+      padding: 9px 12px;
       margin-top: 2px;
     }
 
@@ -291,25 +320,25 @@ JBH
       font-weight: 800;
       color: #94a3b8;
       text-transform: uppercase;
-      letter-spacing: 0.6px;
+      letter-spacing: 0.5px;
       margin-bottom: 2px;
     }
 
-    .status-body {
-      font-size: 0.84rem;
+    .status-text {
+      font-size: 0.85rem;
       font-weight: 600;
       color: #10b981;
     }
 
-    .status-body.alert {
+    .status-text.alert {
       color: #f87171;
     }
 
     /* MODAL OVERLAYS */
-    .modal-overlay {
+    .modal-backdrop {
       position: fixed;
       inset: 0;
-      background: rgba(0, 0, 0, 0.78);
+      background: rgba(0, 0, 0, 0.75);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -317,19 +346,19 @@ JBH
       padding: 16px;
     }
 
-    .modal-overlay.hidden {
+    .modal-backdrop.hidden {
       display: none;
     }
 
-    .modal-sheet {
-      background: #1e293b;
-      border: 1px solid #475569;
+    .modal-card {
+      background: #151c2c;
+      border: 1px solid #334155;
       border-radius: 12px;
       padding: 18px;
       width: 100%;
-      max-width: 310px;
+      max-width: 320px;
       text-align: center;
-      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.7);
+      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.8);
     }
 
     .promo-grid {
@@ -339,12 +368,12 @@ JBH
       margin-top: 14px;
     }
 
-    .promo-choice {
-      background: #334155;
-      border: 1px solid #475569;
+    .promo-btn {
+      background: #1e293b;
+      border: 1px solid #334155;
       border-radius: 8px;
-      padding: 8px 0;
-      font-size: 2.1rem;
+      padding: 10px 0;
+      font-size: 2.2rem;
       cursor: pointer;
       color: #ffffff;
       display: flex;
@@ -352,14 +381,14 @@ JBH
       justify-content: center;
     }
 
-    .promo-choice:active {
-      background: #475569;
+    .promo-btn:active {
+      background: #334155;
     }
   </style>
 </head>
 <body>
 
-  <!-- Top Header Navigation -->
+  <!-- Top Bar -->
   <header class="top-bar">
     <div class="brand-title">
       <span>Chess</span>
@@ -368,7 +397,7 @@ JBH
     <div class="btn-group">
       <button id="btnUndo" class="action-btn" title="Undo Move">↩ Undo</button>
       <button id="btnSound" class="action-btn" title="Toggle Sound">🔊</button>
-      <button id="btnNewGame" class="action-btn btn-new" title="New Session">New</button>
+      <button id="btnNew" class="action-btn btn-new" title="New Game">New</button>
     </div>
   </header>
 
@@ -385,9 +414,11 @@ JBH
       <div id="bankBlack" class="captured-bank"></div>
     </div>
 
-    <!-- Chess Board Grid -->
+    <!-- Chess Board Surround -->
     <div class="board-surround">
-      <div id="boardGrid" class="chess-grid"></div>
+      <div class="board-container">
+        <div id="boardGrid" class="board-grid"></div>
+      </div>
     </div>
 
     <!-- White Player Strip (Bottom) -->
@@ -400,45 +431,46 @@ JBH
       <div id="bankWhite" class="captured-bank"></div>
     </div>
 
-    <!-- 3-TAP SECRET HINT REGION: Completely blended natural dark space -->
-    <div id="secretTapTrigger" class="secret-tap-pad"></div>
+    <!-- SECRET 3-TAP TRIGGER: Completely invisible seamless empty space -->
+    <div id="secretTrigger" class="secret-trigger-zone"></div>
 
     <!-- Match Status -->
-    <div class="status-card">
+    <div class="status-panel">
       <div class="status-header">Game Status</div>
-      <div id="gameStatusText" class="status-body">White to move. Game active.</div>
+      <div id="statusMessage" class="status-text">White to move. Game active.</div>
     </div>
 
   </main>
 
-  <!-- Promotion Dialog -->
-  <div id="pawnPromoModal" class="modal-overlay hidden">
-    <div class="modal-sheet">
+  <!-- Pawn Promotion Modal -->
+  <div id="promoModal" class="modal-backdrop hidden">
+    <div class="modal-card">
       <h3 style="font-size: 1.05rem; color: #f8fafc; margin-bottom: 2px;">Promote Pawn</h3>
-      <p style="font-size: 0.75rem; color: #94a3b8;">Select your preferred piece:</p>
-      <div id="promoSelectionGrid" class="promo-grid"></div>
+      <p style="font-size: 0.75rem; color: #94a3b8;">Choose promotion piece:</p>
+      <div id="promoList" class="promo-grid"></div>
     </div>
   </div>
 
-  <!-- Game Over Dialog -->
-  <div id="gameOverModal" class="modal-overlay hidden">
-    <div class="modal-sheet">
+  <!-- Game Over Modal -->
+  <div id="gameOverModal" class="modal-backdrop hidden">
+    <div class="modal-card">
       <div style="font-size: 2.6rem; margin-bottom: 6px;">🏆</div>
       <h3 id="gameOverTitle" style="font-size: 1.2rem; margin-bottom: 4px;">Game Over</h3>
       <p id="gameOverDetail" style="font-size: 0.82rem; color: #94a3b8; margin-bottom: 16px;"></p>
-      <button id="modalNewMatchBtn" class="action-btn" style="width: 100%; justify-content: center; padding: 10px; background: #f59e0b; color: #0b1120; font-weight: 800; border: none;">Play New Match</button>
+      <button id="modalNewMatchBtn" class="action-btn" style="width: 100%; justify-content: center; padding: 11px; background: #f59e0b; color: #0b0f19; font-weight: 800; border: none;">Play New Match</button>
     </div>
   </div>
 
-  <!-- JAVASCRIPT ENGINE & CONTROLLER -->
+  <!-- JAVASCRIPT GAME ENGINE -->
   <script>
-    // Universal UTF-8 Unicode Glyphs
+    /* =========================================================================
+       CHESS UNICODE GLYPHS & EVALUATION TABLES
+       ========================================================================= */
     const GLYPHS = {
       'wK': '♔', 'wQ': '♕', 'wR': '♖', 'wB': '♗', 'wN': '♘', 'wP': '♙',
       'bK': '♚', 'bQ': '♛', 'bR': '♜', 'bB': '♝', 'bN': '♞', 'bP': '♟'
     };
 
-    // Evaluator Piece Values & Positional Tables
     const PIECE_VALS = { 'P': 100, 'N': 320, 'B': 330, 'R': 500, 'Q': 900, 'K': 20000 };
     const PST_P = [
       [0,  0,  0,  0,  0,  0,  0,  0],
@@ -461,57 +493,61 @@ JBH
       [-50,-40,-30,-30,-30,-30,-40,-50]
     ];
 
-    // Curated Grandmaster Openings for Session Randomization
-    const OPENING_BOOK = [
-      { fromR: 6, fromC: 4, toR: 4, toC: 4, isDouble: true }, // 1. e4 (King's Pawn)
-      { fromR: 6, fromC: 3, toR: 4, toC: 3, isDouble: true }, // 1. d4 (Queen's Pawn)
-      { fromR: 6, fromC: 2, toR: 4, toC: 2, isDouble: true }, // 1. c4 (English Opening)
-      { fromR: 7, fromC: 6, toR: 5, toC: 5 }                  // 1. Nf3 (Zukertort / Réti)
+    // Session opening choices for White
+    const OPENING_OPTIONS = [
+      { fromR: 6, fromC: 4, toR: 4, toC: 4, isDouble: true }, // 1. e4
+      { fromR: 6, fromC: 3, toR: 4, toC: 3, isDouble: true }, // 1. d4
+      { fromR: 6, fromC: 2, toR: 4, toC: 2, isDouble: true }, // 1. c4
+      { fromR: 7, fromC: 6, toR: 5, toC: 5 }                  // 1. Nf3
     ];
 
-    // Sound Synthesizer via Web Audio
-    let audioContext = null;
+    /* =========================================================================
+       AUDIO SYNTHESIZER
+       ========================================================================= */
+    let audioCtx = null;
     let audioMuted = false;
 
-    function playTone(frequency, duration, waveType = 'sine', volume = 0.08) {
+    function playSound(freq, duration, type = 'sine', vol = 0.08) {
       if (audioMuted) return;
       try {
-        if (!audioContext) {
-          const AudioKlass = window.AudioContext || window.webkitAudioContext;
-          if (AudioKlass) audioContext = new AudioKlass();
+        if (!audioCtx) {
+          const Ctor = window.AudioContext || window.webkitAudioContext;
+          if (Ctor) audioCtx = new Ctor();
         }
-        if (audioContext && audioContext.state === 'suspended') audioContext.resume();
-        if (!audioContext) return;
+        if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+        if (!audioCtx) return;
 
-        const osc = audioContext.createOscillator();
-        const gain = audioContext.createGain();
-        osc.type = waveType;
-        osc.frequency.setValueAtTime(frequency, audioContext.currentTime);
-        gain.gain.setValueAtTime(volume, audioContext.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + duration);
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
         osc.connect(gain);
-        gain.connect(audioContext.destination);
+        gain.connect(audioCtx.destination);
         osc.start();
-        osc.stop(audioContext.currentTime + duration);
+        osc.stop(audioCtx.currentTime + duration);
       } catch (e) {}
     }
 
-    // Game Core State
+    /* =========================================================================
+       CORE GAME STATE
+       ========================================================================= */
     let board = [];
     let currentTurn = 'w';
     let selectedSquare = null;
-    let validMoveList = [];
-    let castling = { wK: true, wQ: true, bK: true, bQ: true };
-    let enPassantSquare = null;
-    let capturedWhitePieces = [];
-    let capturedBlackPieces = [];
-    let stateStack = [];
-    let gameEnded = false;
-    let pendingPromotion = null;
-    let covertOptimalMove = null; // {fromR, fromC, toR, toC}
-    let sessionOpeningMove = null;
+    let validMoves = [];
+    let castlingRights = { wK: true, wQ: true, bK: true, bQ: true };
+    let enPassant = null;
+    let capturedWhite = [];
+    let capturedBlack = [];
+    let historyStack = [];
+    let isGameOver = false;
+    let pendingPromo = null;
+    let secretHintMove = null;
+    let sessionOpening = null;
 
-    function startNewGame() {
+    function startMatch() {
       board = [
         ['bR', 'bN', 'bB', 'bQ', 'bK', 'bB', 'bN', 'bR'],
         ['bP', 'bP', 'bP', 'bP', 'bP', 'bP', 'bP', 'bP'],
@@ -524,121 +560,122 @@ JBH
       ];
       currentTurn = 'w';
       selectedSquare = null;
-      validMoveList = [];
-      castling = { wK: true, wQ: true, bK: true, bQ: true };
-      enPassantSquare = null;
-      capturedWhitePieces = [];
-      capturedBlackPieces = [];
-      stateStack = [];
-      gameEnded = false;
-      covertOptimalMove = null;
+      validMoves = [];
+      castlingRights = { wK: true, wQ: true, bK: true, bQ: true };
+      enPassant = null;
+      capturedWhite = [];
+      capturedBlack = [];
+      historyStack = [];
+      isGameOver = false;
+      secretHintMove = null;
 
-      // Randomize White's first move choice for this session
-      const randomIndex = Math.floor(Math.random() * OPENING_BOOK.length);
-      sessionOpeningMove = { ...OPENING_BOOK[randomIndex] };
+      // Randomize session opening choice
+      sessionOpening = { ...OPENING_OPTIONS[Math.floor(Math.random() * OPENING_OPTIONS.length)] };
 
-      pushState();
-      renderDOM();
-      updateInfoStrips();
+      saveState();
+      renderBoardUI();
+      updateStatusDisplays();
     }
 
-    function duplicateBoard(b) {
+    function cloneBoard(b) {
       return b.map(row => [...row]);
     }
 
-    function pushState() {
-      stateStack.push({
-        b: duplicateBoard(board),
+    function saveState() {
+      historyStack.push({
+        board: cloneBoard(board),
         turn: currentTurn,
-        castles: { ...castling },
-        ep: enPassantSquare ? { ...enPassantSquare } : null,
-        cw: [...capturedWhitePieces],
-        cb: [...capturedBlackPieces]
+        castles: { ...castlingRights },
+        ep: enPassant ? { ...enPassant } : null,
+        capW: [...capturedWhite],
+        capB: [...capturedBlack]
       });
     }
 
-    function undoPreviousMove() {
-      if (stateStack.length <= 1 || gameEnded) return;
-      stateStack.pop();
-      const prev = stateStack[stateStack.length - 1];
-      board = duplicateBoard(prev.b);
+    function undoMove() {
+      if (historyStack.length <= 1 || isGameOver) return;
+      historyStack.pop();
+      const prev = historyStack[historyStack.length - 1];
+      board = cloneBoard(prev.board);
       currentTurn = prev.turn;
-      castling = { ...prev.castles };
-      enPassantSquare = prev.ep ? { ...prev.ep } : null;
-      capturedWhitePieces = [...prev.cw];
-      capturedBlackPieces = [...prev.cb];
+      castlingRights = { ...prev.castles };
+      enPassant = prev.ep ? { ...prev.ep } : null;
+      capturedWhite = [...prev.capW];
+      capturedBlack = [...prev.capB];
       selectedSquare = null;
-      validMoveList = [];
-      covertOptimalMove = null;
-      renderDOM();
-      updateInfoStrips();
+      validMoves = [];
+      secretHintMove = null;
+      renderBoardUI();
+      updateStatusDisplays();
     }
 
-    /* CHESS RULES & MOVE GENERATION */
-    function withinBounds(r, c) { return r >= 0 && r < 8 && c >= 0 && c < 8; }
+    /* =========================================================================
+       RULES & MOVE GENERATION
+       ========================================================================= */
+    function inBounds(r, c) { return r >= 0 && r < 8 && c >= 0 && c < 8; }
 
-    function generatePseudoMoves(b, r, c, ep, cs) {
+    function getRawMoves(b, r, c, ep, castles) {
       const piece = b[r][c];
       if (!piece) return [];
       const col = piece[0];
       const type = piece[1];
       const moves = [];
 
-      const recordMove = (toR, toC, meta = {}) => {
+      const addMove = (toR, toC, meta = {}) => {
         moves.push({ fromR: r, fromC: c, toR, toC, ...meta });
       };
 
       if (type === 'P') {
-        const stepDir = col === 'w' ? -1 : 1;
-        const originRow = col === 'w' ? 6 : 1;
-        const promoRow = col === 'w' ? 0 : 7;
+        const dir = col === 'w' ? -1 : 1;
+        const startR = col === 'w' ? 6 : 1;
+        const promoR = col === 'w' ? 0 : 7;
 
-        if (withinBounds(r + stepDir, c) && !b[r + stepDir][c]) {
-          if (r + stepDir === promoRow) {
-            recordMove(r + stepDir, c, { isPromo: true });
+        if (inBounds(r + dir, c) && !b[r + dir][c]) {
+          if (r + dir === promoR) {
+            addMove(r + dir, c, { isPromo: true });
           } else {
-            recordMove(r + stepDir, c);
-            if (r === originRow && !b[r + 2 * stepDir][c]) {
-              recordMove(r + 2 * stepDir, c, { isDouble: true });
+            addMove(r + dir, c);
+            if (r === startR && !b[r + 2 * dir][c]) {
+              addMove(r + 2 * dir, c, { isDouble: true });
             }
           }
         }
 
         for (const dc of [-1, 1]) {
-          const nr = r + stepDir;
+          const nr = r + dir;
           const nc = c + dc;
-          if (withinBounds(nr, nc)) {
+          if (inBounds(nr, nc)) {
             const dest = b[nr][nc];
             if (dest && dest[0] !== col) {
-              if (nr === promoRow) recordMove(nr, nc, { isPromo: true });
-              else recordMove(nr, nc);
+              if (nr === promoR) addMove(nr, nc, { isPromo: true });
+              else addMove(nr, nc);
             } else if (ep && ep.r === nr && ep.c === nc) {
-              recordMove(nr, nc, { isEp: true });
+              addMove(nr, nc, { isEp: true });
             }
           }
         }
       } else if (type === 'N') {
-        const deltas = [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]];
-        for (const [dr, dc] of deltas) {
+        const jumps = [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]];
+        for (const [dr, dc] of jumps) {
           const nr = r + dr, nc = c + dc;
-          if (withinBounds(nr, nc) && (!b[nr][nc] || b[nr][nc][0] !== col)) {
-            recordMove(nr, nc);
+          if (inBounds(nr, nc) && (!b[nr][nc] || b[nr][nc][0] !== col)) {
+            addMove(nr, nc);
           }
         }
       } else if (type === 'B' || type === 'R' || type === 'Q') {
-        const paths = [];
-        if (type === 'B' || type === 'Q') paths.push([-1,-1],[-1,1],[1,-1],[1,1]);
-        if (type === 'R' || type === 'Q') paths.push([-1,0],[1,0],[0,-1],[0,1]);
-        for (const [dr, dc] of paths) {
+        const dirs = [];
+        if (type === 'B' || type === 'Q') dirs.push([-1,-1],[-1,1],[1,-1],[1,1]);
+        if (type === 'R' || type === 'Q') dirs.push([-1,0],[1,0],[0,-1],[0,1]);
+        for (const [dr, dc] of dirs) {
           let step = 1;
           while (true) {
             const nr = r + dr * step, nc = c + dc * step;
-            if (!withinBounds(nr, nc)) break;
+            if (!inBounds(nr, nc)) break;
             const dest = b[nr][nc];
             if (!dest) {
-              recordMove(nr, nc);
+              addMove(nr, nc);
             } else {
-              if (dest[0] !== col) recordMove(nr, nc);
+              if (dest[0] !== col) addMove(nr, nc);
               break;
             }
             step++;
@@ -649,36 +686,7 @@ JBH
           for (let dc = -1; dc <= 1; dc++) {
             if (dr === 0 && dc === 0) continue;
             const nr = r + dr, nc = c + dc;
-            if (withinBounds(nr, nc) && (!b[nr][nc] || b[nr][nc][0] !== col)) {
-              recordMove(nr, nc);
+            if (inBounds(nr, nc) && (!b[nr][nc] || b[nr][nc][0] !== col)) {
+              addMove(nr, nc);
             }
-          }
-        }
-        if (cs) {
-          const homeRow = col === 'w' ? 7 : 0;
-          if (r === homeRow && c === 4) {
-            const canKingside = col === 'w' ? cs.wK : cs.bK;
-            if (canKingside && !b[homeRow][5] && !b[homeRow][6] && b[homeRow][7] === col + 'R') {
-              recordMove(homeRow, 6, { isCastleK: true });
-            }
-            const canQueenside = col === 'w' ? cs.wQ : cs.bQ;
-            if (canQueenside && !b[homeRow][3] && !b[homeRow][2] && !b[homeRow][1] && b[homeRow][0] === col + 'R') {
-              recordMove(homeRow, 2, { isCastleQ: true });
-            }
-          }
-        }
-      }
-      return moves;
-    }
-
-    function squareUnderAttack(b, targetR, targetC, byColor) {
-      for (let r = 0; r < 8; r++) {
-        for (let c = 0; c < 8; c++) {
-          const p = b[r][c];
-          if (p && p[0] === byColor) {
-            const rawMoves = generatePseudoMoves(b, r, c, null, null);
-            for (const m of rawMoves) {
-              if (m.toR === targetR && m.toC === targetC) return true;
-            }
-          }
-      
+          
