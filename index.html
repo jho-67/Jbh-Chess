@@ -55,16 +55,16 @@
     font-size: 11px; 
   }
 
-  /* FROZEN BOARD GEOMETRY - NEVER RESIZES OR DISTORTS */
+  /* FROZEN BOARD GEOMETRY - NEVER RESIZES OR JITTERS */
   .board-wrap { 
     width: 100%; 
     position: relative; 
-    padding-top: 100%; /* Permanent 1:1 aspect ratio */
+    padding-top: 100%;
     border: 3px solid #332314; 
     border-radius: 4px; 
     background: #4a3525;
     overflow: hidden;
-    contain: layout size paint; /* Enforces hardware paint confinement */
+    contain: layout size paint;
   }
   .board { 
     position: absolute; 
@@ -83,15 +83,16 @@
     align-items: center; 
     justify-content: center; 
     position: relative; 
-    overflow: hidden; /* Stops any piece size variation from leaking */
+    overflow: hidden;
     cursor: pointer; 
     contain: strict;
   }
   .l { background: #eed6b0; }
   .d { background: #b88756; }
   .sel { background: #7fa650 !important; }
+  .check-king { background: rgba(220, 38, 38, 0.7) !important; }
 
-  /* Normalized Pieces: Zero font jitter across Android/iOS */
+  /* Normalized piece icons */
   .p-icon {
     font-size: min(8vw, 36px);
     line-height: 1;
@@ -105,19 +106,23 @@
   .w { color: #ffffff; text-shadow: 0 0 2px #000, 0 1px 3px #000; }
   .b { color: #151515; text-shadow: 0 0 1px #fff; }
 
-  /* 1px x 1px ultra-stealth faint micro-pixel */
+  /* Move helper dots */
+  .m-dot { width: 28%; height: 28%; border-radius: 50%; background: rgba(0,0,0,0.25); pointer-events: none; }
+  .m-ring { width: 80%; height: 80%; border-radius: 50%; border: 3px solid rgba(0,0,0,0.3); pointer-events: none; }
+
+  /* Ultra-stealth 1px single micro-pixel */
   .secret-dot {
     position: absolute;
-    top: 2px;
-    left: 2px;
+    top: 1px;
+    left: 1px;
     width: 1px;
     height: 1px;
-    background: rgba(100, 95, 90, 0.48);
+    background: rgba(100, 95, 90, 0.28);
     pointer-events: none;
     z-index: 20;
   }
 
-  /* Covert 3-tap trigger zone */
+  /* 3-tap empty whitespace */
   #tapSpace {
     width: 100%;
     height: 52px;
@@ -131,7 +136,7 @@
     border-radius: 6px; 
     font-size: 13px; 
     color: #10b981; 
-    height: 36px;
+    height: 38px;
     display: flex;
     align-items: center;
   }
@@ -179,8 +184,9 @@
 
 <script>
 const S = ['r','n','b','q','k','b','n','r','p','p','p','p','p','p','p','p','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','P','P','P','P','P','P','P','P','R','N','B','Q','K','B','N','R'];
-let board = [...S], turn = 'w', sel = null, hist = [], hint = null;
+let board = [...S], turn = 'w', sel = null, hist = [], hint = null, isGameOver = false;
 
+// Session-randomized opening choices (e4, d4, c4, or Nf3)
 const OPENS = [{f:52,t:36},{f:51,t:35},{f:50,t:34},{f:62,t:45}];
 const bookMove = OPENS[Math.floor(Math.random()*OPENS.length)];
 
@@ -189,43 +195,44 @@ squares.forEach((sq, i) => sq.onclick = () => onSquare(i));
 
 function isW(p){ return p && p === p.toUpperCase(); }
 function isB(p){ return p && p === p.toLowerCase(); }
+function opp(p, t){ return t === 'w' ? isB(p) : isW(p); }
 
-function getMoves(sq){
-  const p = board[sq];
-  if(!p || (turn === 'w' ? !isW(p) : !isB(p))) return [];
-  const m = [], r = Math.floor(sq/8), c = sq%8, T = p.toUpperCase();
-  const d = (turn === 'w') ? -1 : 1;
-  const opp = turn === 'w' ? isB : isW;
+// Raw move vectors without check filters
+function getRaw(b, sq, color){
+  const p = b[sq];
+  if(!p) return [];
+  const res = [], r = Math.floor(sq/8), c = sq%8, T = p.toUpperCase();
 
   if(T === 'P'){
-    const f1 = (r+d)*8 + c;
-    if(!board[f1]) {
-      m.push(f1);
-      const f2 = (r+d*2)*8 + c;
-      if(((turn === 'w' && r === 6) || (turn === 'b' && r === 1)) && !board[f2]) m.push(f2);
+    const d = (color === 'w') ? -1 : 1;
+    const f1 = (r + d)*8 + c;
+    if(f1 >= 0 && f1 < 64 && !b[f1]){
+      res.push(f1);
+      const f2 = (r + d*2)*8 + c;
+      if(((color === 'w' && r === 6) || (color === 'b' && r === 1)) && !b[f2]) res.push(f2);
     }
     for(const dc of [-1, 1]){
       const tc = c + dc;
       if(tc >= 0 && tc < 8){
-        const cap = (r+d)*8 + tc;
-        if(opp(board[cap])) m.push(cap);
+        const cap = (r + d)*8 + tc;
+        if(b[cap] && opp(b[cap], color)) res.push(cap);
       }
     }
   } else if(T === 'N'){
     for(const [dr,dc] of [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]]){
-      const tr = r+dr, tc = c+dc;
+      const tr = r + dr, tc = c + dc;
       if(tr>=0 && tr<8 && tc>=0 && tc<8){
         const t = tr*8 + tc;
-        if(!board[t] || opp(board[t])) m.push(t);
+        if(!b[t] || opp(b[t], color)) res.push(t);
       }
     }
   } else if(T === 'K'){
     for(let dr=-1; dr<=1; dr++) for(let dc=-1; dc<=1; dc++){
       if(!dr && !dc) continue;
-      const tr = r+dr, tc = c+dc;
+      const tr = r + dr, tc = c + dc;
       if(tr>=0 && tr<8 && tc>=0 && tc<8){
         const t = tr*8 + tc;
-        if(!board[t] || opp(board[t])) m.push(t);
+        if(!b[t] || opp(b[t], color)) res.push(t);
       }
     }
   } else {
@@ -233,52 +240,133 @@ function getMoves(sq){
     if(T==='B'||T==='Q') dirs.push([-1,-1],[-1,1],[1,-1],[1,1]);
     if(T==='R'||T==='Q') dirs.push([-1,0],[1,0],[0,-1],[0,1]);
     for(const [dr,dc] of dirs){
-      let tr = r+dr, tc = c+dc;
+      let tr = r + dr, tc = c + dc;
       while(tr>=0 && tr<8 && tc>=0 && tc<8){
         const t = tr*8 + tc;
-        if(!board[t]) m.push(t);
-        else { if(opp(board[t])) m.push(t); break; }
+        if(!b[t]) res.push(t);
+        else { if(opp(b[t], color)) res.push(t); break; }
         tr += dr; tc += dc;
       }
     }
   }
-  return m;
+  return res;
+}
+
+// Simulates board outcome
+function sim(b, from, to){
+  const nb = [...b];
+  nb[to] = nb[from];
+  nb[from] = '';
+  if(nb[to] === 'P' && to < 8) nb[to] = 'Q';
+  if(nb[to] === 'p' && to >= 56) nb[to] = 'q';
+  return nb;
+}
+
+// Check if King of given color is currently attacked
+function inCheck(b, color){
+  const kSq = b.indexOf(color === 'w' ? 'K' : 'k');
+  if(kSq === -1) return true;
+  const enemy = color === 'w' ? 'b' : 'w';
+  for(let i=0; i<64; i++){
+    if(b[i] && (enemy === 'w' ? isW(b[i]) : isB(b[i]))){
+      if(getRaw(b, i, enemy).includes(kSq)) return true;
+    }
+  }
+  return false;
+}
+
+// Strict legal moves: filters out any move that leaves own King in check
+function getLegalMoves(sq){
+  const p = board[sq];
+  if(!p || (turn === 'w' ? !isW(p) : !isB(p))) return [];
+  const rawMoves = getRaw(board, sq, turn);
+  return rawMoves.filter(to => !inCheck(sim(board, sq, to), turn));
+}
+
+// Total legal moves count for turn player
+function getAllLegalMoves(color){
+  const moves = [];
+  for(let i=0; i<64; i++){
+    if(board[i] && (color === 'w' ? isW(board[i]) : isB(board[i]))){
+      const m = getLegalMoves(i);
+      for(const to of m) moves.push({ f: i, t: to });
+    }
+  }
+  return moves;
 }
 
 function updateUI(){
   const GLYPH = {P:'♟',N:'♞',B:'♝',R:'♜',Q:'♛',K:'♚',p:'♟',n:'♞',b:'♝',r:'♜',q:'♛',k:'♚'};
+  const underCheck = inCheck(board, turn);
+  const activeLegal = getAllLegalMoves(turn);
+  const kingSq = board.indexOf(turn === 'w' ? 'K' : 'k');
+
+  // Checkmate / Stalemate detection
+  isGameOver = activeLegal.length === 0;
+
   squares.forEach((sq, i) => {
     sq.innerHTML = '';
     sq.classList.toggle('sel', i === sel);
+    sq.classList.toggle('check-king', underCheck && i === kingSq);
+
     if(board[i]){
       const s = document.createElement('span');
       s.className = `p-icon ${isW(board[i]) ? 'w' : 'b'}`;
       s.textContent = GLYPH[board[i]];
       sq.appendChild(s);
     }
+
+    // Legal move helpers
+    if(sel !== null && getLegalMoves(sel).includes(i)){
+      const d = document.createElement('div');
+      d.className = board[i] ? 'm-ring' : 'm-dot';
+      sq.appendChild(d);
+    }
+
+    // Covert 1px dot
     if(hint && (i === hint.f || i === hint.t)){
       const d = document.createElement('div');
       d.className = 'secret-dot';
       sq.appendChild(d);
     }
   });
+
   document.getElementById('wTurn').style.display = turn === 'w' ? 'inline' : 'none';
   document.getElementById('bTurn').style.display = turn === 'b' ? 'inline' : 'none';
-  document.getElementById('stMsg').textContent = `${turn === 'w' ? 'White' : 'Black'} to move. Game active.`;
+
+  const stMsg = document.getElementById('stMsg');
+  if(isGameOver){
+    if(underCheck){
+      stMsg.textContent = `Checkmate! ${turn === 'w' ? 'Black' : 'White'} wins.`;
+      stMsg.style.color = '#ef4444';
+    } else {
+      stMsg.textContent = 'Stalemate (Draw).';
+      stMsg.style.color = '#eab308';
+    }
+  } else if(underCheck){
+    stMsg.textContent = `${turn === 'w' ? 'White' : 'Black'} King is in Check!`;
+    stMsg.style.color = '#ef4444';
+  } else {
+    stMsg.textContent = `${turn === 'w' ? 'White' : 'Black'} to move. Game active.`;
+    stMsg.style.color = '#10b981';
+  }
 }
 
 function onSquare(i){
+  if(isGameOver) return; // Completely freeze board on checkmate
+
   if(sel !== null){
-    const moves = getMoves(sel);
+    const moves = getLegalMoves(sel);
     if(moves.includes(i)){
-      hist.push({b:[...board], t:turn, f:sel, to:i});
+      // Validated move that guarantees king safety
+      hist.push({ b: [...board], t: turn, f: sel, to: i });
       board[i] = board[sel];
       board[sel] = '';
-      if(board[i]==='P' && i < 8) board[i] = 'Q';
-      if(board[i]==='p' && i >= 56) board[i] = 'q';
+      if(board[i] === 'P' && i < 8) board[i] = 'Q';
+      if(board[i] === 'p' && i >= 56) board[i] = 'q';
       turn = (turn === 'w') ? 'b' : 'w';
       sel = null;
-      hint = null;
+      hint = null; // Automatically clear hint after move
       updateUI();
       return;
     }
@@ -295,10 +383,11 @@ function undo(){
   turn = last.t;
   sel = null;
   hint = null;
+  isGameOver = false;
   updateUI();
 }
 
-// Secret 3-Tap Handler
+// Mobile 3-Tap Covert Trigger
 let tapTimes = [];
 const pad = document.getElementById('tapSpace');
 
@@ -311,26 +400,25 @@ function triggerSecretTap(e) {
 
   if (tapTimes.length >= 3) {
     tapTimes = [];
-    if (turn === 'w') {
+    if (turn === 'w' && !isGameOver) {
       if (hint) {
         hint = null;
       } else if (hist.length === 0 && board[bookMove.f] === 'P') {
-        hint = bookMove;
+        hint = bookMove; // Randomized master opening
       } else {
+        const moves = getAllLegalMoves('w');
         let best = null, maxScore = -9999;
-        for (let i = 0; i < 64; i++) {
-          if (board[i] && isW(board[i])) {
-            for (const to of getMoves(i)) {
-              let sc = 1;
-              if (board[to]) {
-                sc += { p: 10, n: 30, b: 30, r: 50, q: 90, k: 900 }[board[to].toLowerCase()] || 0;
-              }
-              if ([27, 28, 35, 36].includes(to)) sc += 2;
-              if (sc > maxScore) {
-                maxScore = sc;
-                best = { f: i, t: to };
-              }
-            }
+        for (const m of moves) {
+          const nb = sim(board, m.f, m.t);
+          let sc = 1;
+          if (board[m.t]) {
+            sc += { p: 10, n: 30, b: 30, r: 50, q: 90, k: 900 }[board[m.t].toLowerCase()] || 0;
+          }
+          if ([27, 28, 35, 36].includes(m.t)) sc += 2; // Control center
+          if (inCheck(nb, 'b')) sc += 5; // Put opponent in check
+          if (sc > maxScore) {
+            maxScore = sc;
+            best = m;
           }
         }
         hint = best;
@@ -344,6 +432,4 @@ pad.addEventListener('pointerdown', triggerSecretTap, { passive: false });
 pad.addEventListener('touchstart', triggerSecretTap, { passive: false });
 </script>
 </body>
- </html>
- 
- 
+</html>
